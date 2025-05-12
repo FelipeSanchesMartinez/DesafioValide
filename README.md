@@ -85,6 +85,8 @@ git clone https://github.com/FelipeSanchesMartinez/DesafioValide.git
     Aplique as migrations
 
 dotnet ef database update
+ou
+Upadate-Database 
 
     Execute o projeto
 
