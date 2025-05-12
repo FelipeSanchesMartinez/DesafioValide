@@ -74,7 +74,7 @@ Passos
 
     Clone o repositório
 
-git clone https://github.com/seu-usuario/seu-projeto.git
+git clone https://github.com/FelipeSanchesMartinez/DesafioValide.git
 
     Configure a string de conexão no appsettings.json
 
