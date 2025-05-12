@@ -1,0 +1,381 @@
+﻿@page "/produtos"
+@inject IProdutoHttpClient ProdutoHttpClient
+@inject ICategoriatHttpClient CategoriaHttpClient
+@inject NavigationManager NavigationManager
+@inject IAlertService AlertService
+@inject IMapper Mapper
+@inject IToastService IToastService
+
+<PageTitle>Produtos</PageTitle>
+
+
+@if (Categorias is null)
+{
+	<div class="mt-5 has-text-centered">
+		<p class="subtitle is-5">
+			É necessário ter uma categoria cadastrada para cadastrar um produto. <strong>Cadastre agora</strong>
+		</p>
+		<button @onclick="NavegarParaCategoria" class="button is-light mb-5">
+			<span class="icon mr-2">
+				<i class="fab fa-plus"></i>
+			</span>
+			Adicionar uma Categoria
+		</button>
+	</div>
+}
+else
+{
+	@if (Produtos is not null)
+	{
+		<section class="section">
+			<div class="level mb-4">
+				<div class="level-left">
+					<div class="level-item">
+						<h1 class="title is-4">Meus Produtos</h1>
+					</div>
+				</div>
+				<div class="level-right">
+					<div class="level-item">
+						<button @onclick="ModalControle" class="button is-success">
+							<span class="icon mr-2">
+								<i class="fas fa-plus"></i>
+							</span>
+							<span>Adicionar produto</span>
+						</button>
+					</div>
+				</div>
+			</div>
+
+
+			<div class="mt-5 mb-5">
+				<header class="is-clickable" @onclick="ToggleFilters">
+					<p class="title is-5 mb-0">
+						<span class="icon"><i class="fas @(FiltersOpen ? "fa-chevron-down" : "fa-chevron-right")"></i></span>
+						Filtros
+					</p>
+				</header>
+
+				@if (FiltersOpen)
+				{
+					<div class="columns is-variable is-5 mt-3">
+						<div class="column is-half">
+							<label class="label">Buscar por nome</label>
+							<div class="field has-addons">
+								<div class="control is-expanded">
+									<input class="input" type="text" placeholder="Digite o nome"
+									@bind="nomePesquisa" @bind:event="oninput" />
+								</div>
+								<div class="control">
+									<button class="button is-info" @onclick="ProcurarProdutoPorNome">
+										<span class="icon"><i class="fas fa-search"></i></span>
+									</button>
+								</div>
+							</div>
+						</div>
+
+						<div class="column is-one-quarter">
+							<label class="label">Categoria</label>
+							<div class="select is-fullwidth">
+								<select @onchange="OnCategoriaChanged">
+									<option value="">Selecione uma categoria</option>
+									@foreach (var categoria in Categorias)
+									{
+										<option value="@categoria.Id">@categoria.Nome</option>
+									}
+								</select>
+							</div>
+						</div>
+
+						<div class="column is-one-quarter is-flex is-align-items-flex-end is-justify-content-flex-end">
+							<button class="button is-light" @onclick="LimparFiltros">
+								<span class="icon"><i class="fas fa-eraser"></i></span>
+								<span>Limpar filtros</span>
+							</button>
+						</div>
+					</div>
+				}
+			</div>
+
+			@if (!Produtos.Any())
+			{
+				<div class="notification is-light has-text-centered mt-5 mb-5">
+					Nenhum produto encontrado...
+				</div>
+			}
+			else
+			{
+				<table class="table is-striped is-hoverable is-fullwidth">
+					<thead>
+						<tr>
+							<th>Produto</th>
+							<th>Estoque</th>
+							<th>Preço</th>
+							<th>Categoria</th>
+							<th style="width: 160px;">Ações</th>
+						</tr>
+					</thead>
+					<tbody>
+						@foreach (var produto in Produtos)
+						{
+							<tr>
+								<td>@produto.Nome</td>
+								<td>@produto.Estoque</td>
+								<td>@produto.Preco.ToString("C")</td>
+								<td>
+									<span class="tag has-background-link-light has-text-black is-rounded">
+										@produto.CategoriaNome
+									</span>
+								</td>
+								<td>
+									<div class="buttons are-small">
+										<button class="button is-warning" @onclick="() => EditarProduto(produto)" data-tooltip="Editar">
+											<span class="icon"><i class="fas fa-edit"></i></span>
+										</button>
+										<button class="button is-danger" @onclick="() => DeletarProduto(produto.Id!.Value)" data-tooltip="Excluir">
+											<span class="icon"><i class="fas fa-trash"></i></span>
+										</button>
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			}
+
+			<Pagination Page="pagina" PageTotal="totalPaginas" PageOnChange="PageOnChangeHandler" />
+		</section>
+
+		<Modal Title=@ModalTittle
+		@bind-IsOpen="ModalIsOpen"
+		OnConfirm="OnValidSubmit"
+		OnCancel="() => InputModel = new()">
+			<EditForm Model="InputModel" OnValidSubmit="OnValidSubmit">
+				<FluentValidationValidator />
+				<ValidationSummary />
+
+				<div class="field">
+					<label class="label">Nome</label>
+					<div class="control">
+						<InputText class="input" @bind-Value="InputModel.Nome" />
+					</div>
+					<ValidationMessage class="help is-danger" For="() => InputModel.Nome"></ValidationMessage>
+				</div>
+
+				<div class="field">
+					<label class="label">Preço</label>
+					<div class="control">
+						<InputNumber class="input" @bind-Value="InputModel.Preco" />
+					</div>
+					<ValidationMessage class="help is-danger" For="() => InputModel.Preco"></ValidationMessage>
+				</div>
+
+				<div class="field">
+					<label class="label">Quantidade em estoque</label>
+					<div class="control">
+						<InputNumber class="input" @bind-Value="InputModel.Estoque" />
+					</div>
+					<ValidationMessage class="help is-danger" For="() => InputModel.Estoque"></ValidationMessage>
+				</div>
+
+				<div class="field">
+					<label class="label">Categoria</label>
+					<div class="control">
+						<select class="input" @bind="InputModel.CategoriaId">
+							<option value="">Selecione uma categoria</option>
+							@foreach (var categoria in Categorias)
+							{
+								<option value="@categoria.Id">@categoria.Nome</option>
+							}
+						</select>
+					</div>
+					<ValidationMessage class="help is-danger" For="() => InputModel.CategoriaNome"></ValidationMessage>
+				</div>
+				<div class="field mt-5">
+					<div class="control">
+						<button class="button is-primary is-fullwidth" type="submit">Salvar</button>
+					</div>
+				</div>
+
+				<div class="field mt-2">
+					<div class="control">
+						<button class="button is-light is-fullwidth" type="button" @onclick="() => ModalIsOpen = false">Cancelar</button>
+					</div>
+				</div>
+
+			</EditForm>
+		</Modal>
+	}
+}
+@code {
+	private ProdutoViewModel InputModel = new();
+	private List<ProdutoViewModel>? Produtos;
+	private List<CategoriaViewModel>? Categorias;
+	public bool ModalIsOpen = false;
+	private string ModalIsActiveClass { get { return ModalIsOpen ? "is-active" : string.Empty; } }
+	private string ModalTittle { get { return InputModel.Id is not null ? "Ediar" : "Inserir"; } }
+	private bool FiltersOpen = false;
+	long? selectedCategoryId;
+	string nomePesquisa = string.Empty;
+	int pagina = 1;
+	int limite = 20;
+	int totalPaginas = 1;
+
+
+	protected override async Task OnInitializedAsync()
+	{
+		await ObterProdutos();
+		await ObterCategorias();
+	}
+
+	private async Task ObterProdutos()
+	{
+		var res = await ProdutoHttpClient.ObterTodosPaginado<ProdutoViewModel>(pagina, limite);
+
+		if (res is null)
+			return;
+
+		Produtos = res.Data.ToList();
+		totalPaginas = GetTotalPages(res.TotalRecords, res.Limit);
+
+	}
+	private async Task OterProdutoPorCategoriaId()
+	{
+		if (selectedCategoryId is null)
+			return;
+
+		var res = await ProdutoHttpClient.OterProdutoPorCategoriaId(selectedCategoryId.Value, pagina, limite);
+
+		if (res is null)
+			return;
+
+		Produtos = res.Data.ToList();
+		totalPaginas = GetTotalPages(res.TotalRecords, res.Limit);
+
+	}
+
+	private async Task ObterCategorias()
+	{
+		var res = await CategoriaHttpClient.ObterTodos<CategoriaViewModel>();
+
+		if (res is null)
+			return;
+
+		Categorias = res.ToList();
+	}
+
+	async Task PageOnChangeHandler(int nextPage)
+	{
+		pagina = nextPage;
+
+		if (selectedCategoryId is null && string.IsNullOrEmpty(nomePesquisa))
+		{
+			await ObterProdutos();
+		}
+		else if (selectedCategoryId > 0)
+		{
+			await OterProdutoPorCategoriaId();
+		}
+		else if (!string.IsNullOrEmpty(nomePesquisa))
+		{
+			await ProcurarProdutoPorNome();
+		}
+	}
+
+	int GetTotalPages(long totalRecords, int limit)
+	{
+		decimal totalRecordsDec = decimal.Parse(totalRecords.ToString());
+		decimal limitDec = decimal.Parse(limit.ToString());
+
+		decimal result = Math.Ceiling(totalRecords / limitDec);
+
+		return result <= 0 ? 1 : int.Parse(result.ToString());
+	}
+
+	private async Task OnCategoriaChanged(ChangeEventArgs e)
+	{
+		if (long.TryParse(e.Value?.ToString(), out var id))
+		{
+			selectedCategoryId = id;
+			await OterProdutoPorCategoriaId();
+		}
+		else
+		{
+			selectedCategoryId = null;
+			await ObterProdutos();
+		}
+	}
+
+	private void NavegarParaCategoria()
+	{
+		NavigationManager.NavigateTo("/categorias");
+	}
+	private void EditarProduto(ProdutoViewModel produto)
+	{
+		InputModel = Mapper.Map<ProdutoViewModel>(produto);
+		ModalControle();
+	}
+
+	private void ModalControle()
+	{
+		ModalIsOpen = !ModalIsOpen;
+		StateHasChanged();
+	}
+
+	private async Task DeletarProduto(int id)
+	{
+		if (!await AlertService.Confirm("Atenção", "Tem certeza que deseja apagar este registro"))
+			return;
+
+		var res = await ProdutoHttpClient.Deletar(id);
+
+		if (res)
+		{
+			IToastService.ShowSuccess($"Sucesso", toast => toast.Timeout = 5);
+			await ObterProdutos();
+		}
+	
+	}
+
+	private async Task OnValidSubmit()
+	{
+		if (!await AlertService.Confirm("Atenção", "Tem certeza que deseja salvar este registro"))
+			return;
+
+		var res = InputModel.Id is not null ? await ProdutoHttpClient.Atualizar(InputModel) :
+											await ProdutoHttpClient.Inserir(InputModel);
+		if (res)
+			IToastService.ShowSuccess($"Sucesso", toast => toast.Timeout = 5);
+
+		await ObterProdutos();
+		InputModel = new();
+		ModalControle();
+	}
+
+	async Task ProcurarProdutoPorNome()
+	{
+		if (string.IsNullOrEmpty(nomePesquisa))
+	{
+			return;
+		}
+		var pesquisa = nomePesquisa.ToLower();
+
+		var res = await ProdutoHttpClient.ProcurarProdutoPorNome(pesquisa, pagina, limite);
+		if (res is null)
+			return;
+		Produtos = res.Data;
+		totalPaginas = GetTotalPages(res.TotalRecords, res.Limit);
+
+	}
+	private void ToggleFilters()
+	{
+		FiltersOpen = !FiltersOpen;
+	}
+	private async Task LimparFiltros()
+	{
+		nomePesquisa = string.Empty;
+		selectedCategoryId = null;
+		await ObterProdutos();
+	}
+
+}
+

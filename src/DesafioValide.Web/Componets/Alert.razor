@@ -1,0 +1,40 @@
+﻿@inject IAlertService AlertService;
+
+<div style="z-index:50;" class="modal @ModalIsActiveClass">
+    <div class="modal-background"></div>
+    <div class="modal-card" style="max-width:300px;">
+        <header class="modal-card-head" style="display:flex;
+                                                flex-direction:column;
+                                                justify-content:left;
+                                                align-items:flex-start;
+                                                gap:20px;
+                                                padding:20px;">
+            <p class="modal-card-title">@(AlertService.Title ?? "Atenção")</p>
+            <div>@(AlertService.Content ?? "Tem certeza?")</div>
+        </header>
+        <footer class="modal-card-foot" style="padding:20px">
+            <div style="width:100%; display:flex;gap:10px;justify-content:space-around;">
+                <button class="button" @onclick="()=>AlertService.Cancel()">Cancelar</button>
+                <button class="button is-success" @onclick="()=>AlertService.Ok()">Confirmar</button>
+            </div>
+        </footer>
+    </div>
+</div>
+
+@code {
+
+    public bool ModalIsOpen { get; set; }
+
+    private string ModalIsActiveClass { get { return ModalIsOpen ? "is-active" : string.Empty; } }
+
+    protected override void OnInitialized()
+    {
+        AlertService.AlertIsOpenOnChange += AlertService_AlertIsOpenOnChange;
+    }
+
+    public void AlertService_AlertIsOpenOnChange(bool isOpen)
+    {
+        ModalIsOpen = isOpen;
+        StateHasChanged();
+    }
+}

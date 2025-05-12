@@ -1,0 +1,204 @@
+﻿@page "/categorias"
+@inject ICategoriatHttpClient CategoriaHttpClient
+@inject IProdutoHttpClient ProdutoHttpClient
+@inject IMapper Mapper
+@inject IAlertService AlertService
+@inject IToastService IToastService
+
+<PageTitle>Categorias</PageTitle>
+
+@if (Categorias is not null)
+{
+	<section class="section">
+		<div class="level mb-4">
+			<div class="level-left">
+				<div class="level-item">
+					<h1 class="title is-4">Minhas Categorias</h1>
+				</div>
+			</div>
+			<div class="level-right">
+				<div class="level-item">
+					<button @onclick="ModalControl" class="button is-success">
+						<span class="icon mr-2">
+							<i class="fas fa-plus"></i>
+						</span>
+						<span>Adicionar Categoria</span>
+					</button>
+				</div>
+			</div>
+		</div>
+
+		@if (!Categorias.Any())
+		{
+			<div class="notification is-light has-text-centered mt-5 mb-5">
+				Nenhuma categoria encontrada....
+			</div>
+		}
+		else
+		{
+			<table class="table is-striped is-hoverable is-fullwidth">
+				<thead>
+					<tr>
+						<th>Nome da Categoria</th>
+						<th style="width: 160px;">Ações</th>
+					</tr>
+				</thead>
+				<tbody>
+					@foreach (var categoria in Categorias)
+					{
+						<tr>
+							<td>@categoria.Nome</td>
+							<td>
+								<div class="buttons are-small">
+									<button class="button is-warning" @onclick="() => EditarCategoria(categoria)" data-tooltip="Editar">
+										<span class="icon"><i class="fas fa-edit"></i></span>
+									</button>
+									<button class="button is-danger" @onclick="() => DeletarCategoria(categoria.Id!.Value)" data-tooltip="Excluir">
+										<span class="icon"><i class="fas fa-trash"></i></span>
+									</button>
+								</div>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+
+		<Pagination Page="pagina" PageTotal="totalPaginas" PageOnChange="PageOnChangeHandler"></Pagination>
+	</section>
+	<Modal Title="@ModalTitle"
+		   @bind-IsOpen="ModalIsOpen"
+		   OnConfirm="OnValidSubmit"
+		   OnCancel="() => InputModel = new()">
+		<EditForm Model="InputModel" OnValidSubmit="OnValidSubmit">
+			<FluentValidationValidator />
+			<ValidationSummary />
+
+			<div class="field">
+				<label class="label">Nome</label>
+				<div class="control">
+					<InputText class="input" @bind-Value="InputModel.Nome" />
+				</div>
+				<ValidationMessage For="() => InputModel.Nome" class="help is-danger" />
+			</div>
+			<div class="field mt-5">
+				<div class="control">
+					<button class="button is-primary is-fullwidth" type="submit">Salvar</button>
+				</div>
+			</div>
+
+			<div class="field mt-2">
+				<div class="control">
+					<button class="button is-light is-fullwidth" type="button" @onclick="() => ModalIsOpen = false">Cancelar</button>
+				</div>
+			</div>
+		</EditForm>
+	</Modal>
+
+}
+
+@code {
+	private CategoriaViewModel InputModel = new();
+	private List<CategoriaViewModel>? Categorias;
+	public bool ModalIsOpen = false;
+	private string ModalIsActiveClass { get { return ModalIsOpen ? "is-active" : string.Empty; } }
+	private string ModalTitle { get { return InputModel.Id is not null ? "Ediar categoria" : "Inserir categoria"; } }
+	string searchName = string.Empty;
+	int pagina = 1;
+	int limite = 20;
+	int totalPaginas = 1;
+
+
+	protected override async Task OnInitializedAsync()
+	{
+		await ObterCategorias();
+	}
+
+	private async Task ObterCategorias()
+	{
+		var res = await CategoriaHttpClient.ObterTodosPaginado<CategoriaViewModel>(pagina, limite);
+
+		if (res is null)
+			return;
+
+		Categorias = res.Data.ToList();
+		totalPaginas = ObterTotalPaginas(res.TotalRecords, res.Limit);
+
+	}
+
+	async Task PageOnChangeHandler(int nextPage)
+	{
+		pagina = nextPage;
+		await ObterCategorias();
+	}
+
+	int ObterTotalPaginas(long totalDados, int limite)
+	{
+		decimal totalDadosDec = decimal.Parse(totalDados.ToString());
+		decimal limiteDec = decimal.Parse(limite.ToString());
+
+		decimal resultado = Math.Ceiling(totalDados / limiteDec);
+
+		return resultado <= 0 ? 1 : int.Parse(resultado.ToString());
+	}
+
+
+	private void EditarCategoria(CategoriaViewModel category)
+	{
+		InputModel = Mapper.Map<CategoriaViewModel>(category);
+		ModalControl();
+	}
+
+	private void ModalControl()
+	{
+		ModalIsOpen = true;
+		StateHasChanged();
+	}
+
+	private async Task DeletarCategoria(int id)
+	{
+		if (await CategoriaTemProduto(id))
+		{
+			await AlertService.Confirm("Atenção", "Categoria não pode ser deletado por que tem produtos cadastrados");
+			return;
+		}
+
+		if (!await AlertService.Confirm("Atenção", "Tem certeza que deseja apagar este registro"))
+			return;
+
+		var res = await CategoriaHttpClient.Deletar(id);
+
+		if (res)
+		{
+			IToastService.ShowSuccess($"Sucesso", toast => toast.Timeout = 5);
+			await ObterCategorias();
+		}
+	}
+
+	private async Task OnValidSubmit()
+	{
+		if (!await AlertService.Confirm("Atenção", "Tem certeza que deseja salvar este registro"))
+			return;
+
+		var res = InputModel.Id is not null ? await CategoriaHttpClient.Atualizar(InputModel) :
+													await CategoriaHttpClient.Inserir(InputModel);
+
+		if (res)
+			IToastService.ShowSuccess($"Sucesso", toast => toast.Timeout = 5);
+
+		await ObterCategorias();
+		InputModel = new();
+		ModalIsOpen = false;
+	}
+	private async Task<bool> CategoriaTemProduto(int id)
+	{
+		var res = await ProdutoHttpClient.OterProdutoPorCategoriaId(id, pagina, limite);
+
+		if (res is null)
+			return false;
+
+		return res.Data.ToList().Count > 0;
+
+	}
+}
+

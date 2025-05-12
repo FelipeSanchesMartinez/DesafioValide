@@ -1,0 +1,79 @@
+﻿@inherits LayoutComponentBase
+
+@inject LoadingFullscreenState LoadingFullscreenState;
+@inject NavigationManager NavigationManager
+<BlazoredToasts IconType="IconType.FontAwesome" Position=" ToastPosition.TopRight" />
+
+@if (IsLoading)
+{
+	<LoadingFullscreen></LoadingFullscreen>
+}
+<Alert></Alert>
+<div>
+
+    <SectionOutlet SectionName="navbar"></SectionOutlet>
+    <SectionContent SectionName="navbar">
+        <nav class="navbar has-shadow is-light" role="navigation" aria-label="main navigation">
+            <div class="navbar-brand">
+                <a role="button"
+                   class="navbar-burger @(navbarOpen ? "is-active" : "")"
+                   aria-label="menu"
+                   aria-expanded="@navbarOpen"
+                   @onclick="ToggleNavbar">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </a>
+            </div>
+
+            <div class="navbar-menu @(navbarOpen ? "is-active" : "") transition-navbar">
+                <div class="navbar-start">
+                    <NavLink href="/" class="navbar-item" Match="NavLinkMatch.All">
+                        <span class="icon mr-2">
+                            <i class="fas fa-home"></i>
+                        </span>
+                        Início
+                    </NavLink>
+
+                    <NavLink href="/produtos" class="navbar-item">
+                        <span class="icon mr-2">
+                            <i class="fas fa-box"></i>
+                        </span>
+                        Produtos
+                    </NavLink>
+
+                    <NavLink href="/categorias" class="navbar-item">
+                        <span class="icon mr-2">
+                            <i class="fas fa-tags"></i>
+                        </span>
+                        Categorias
+                    </NavLink>
+                </div>
+            </div>
+        </nav>
+    </SectionContent>
+    <div class="container is-fluid py-5 px-4" style="min-height: calc(100vh - 64px);">
+        @Body
+    </div>
+
+
+</div>
+@code {
+	public bool IsLoading { get; set; }
+    private bool navbarOpen = false;
+
+	protected override void OnInitialized()
+	{
+		LoadingFullscreenState.OnChange += LoadingFullscreenState_OnChangeHandler;
+	}
+	void LoadingFullscreenState_OnChangeHandler(bool isLoading)
+	{
+		IsLoading = isLoading;
+		StateHasChanged();
+	}
+
+    private void ToggleNavbar()
+    {
+        navbarOpen = !navbarOpen;
+    }
+}

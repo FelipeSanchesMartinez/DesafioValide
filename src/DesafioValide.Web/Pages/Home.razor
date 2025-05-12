@@ -1,0 +1,54 @@
+﻿@page "/"
+@inject NavigationManager NavigationManager
+<PageTitle>Início</PageTitle>
+
+<section class="hero is-primary">
+    <div class="hero-body has-text-centered">
+        <p class="title">
+            Bem-vindo ao Sistema de Produtos
+        </p>
+        <p class="subtitle">
+            Gerencie seus produtos e categorias de forma simples e eficaz
+        </p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="columns is-multiline is-centered is-variable is-8">
+
+            <div class="column is-one-third">
+                <div class="box has-text-centered custom-box">
+                    <span class="icon is-large has-text-link mb-2">
+                        <i class="fas fa-box fa-3x"></i>
+                    </span>
+                    <h2 class="title is-4">Produtos</h2>
+                    <p class="mb-4">Visualize, adicione e edite seus produtos</p>
+                    <button class="button is-link is-light transition" @onclick='() => Nav("produtos")' aria-label="Acessar produtos">
+                        Acessar Produtos
+                    </button>
+                </div>
+            </div>
+
+            <div class="column is-one-third">
+                <div class="box has-text-centered custom-box">
+                    <span class="icon is-large has-text-info mb-2">
+                        <i class="fas fa-tags fa-3x"></i>
+                    </span>
+                    <h2 class="title is-4">Categorias</h2>
+                    <p class="mb-4">Gerencie as categorias de seus produtos</p>
+                    <button class="button is-info is-light transition" @onclick='() => Nav("categorias")' aria-label="Acessar categorias">
+                        Acessar Categorias
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    public void Nav(string route)
+    {
+        NavigationManager.NavigateTo($"/{route}");
+    }
+}

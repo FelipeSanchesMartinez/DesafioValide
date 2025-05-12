@@ -1,0 +1,159 @@
+﻿﻿<nav class="pagination is-centered is-primary" role="navigation" aria-label="pagination">
+
+    <ul class="pagination-list is-primary">
+
+        @foreach (var pagina in PagesCalc)
+        {
+            @if (PagesCalc.Count >= 7 && (PagesCalc.IndexOf(pagina) == 1 || PagesCalc.IndexOf(pagina) == 4))
+            {
+                <li><span class="pagination-ellipsis">&hellip</span></li>
+            }
+            <li><a @onclick="()=>PageOnClick(pagina)" class="pagination-link is-primary @IsCurrentPageClass(pagina)" aria-label="Pagina @pagina" aria-current="page">@pagina</a></li>
+        }
+    </ul>
+    <a class="pagination-previous" disabled="@LastPageDisabled" @onclick="LastPageOnClick">Anterior</a>
+    <a class="pagination-next" disabled="@ButtonProximoDisabled" @onclick="NextPageOnClick">Proxima</a>
+</nav>
+
+@code {
+    [Parameter]
+    public EventCallback<int> PageOnChange { get; set; }
+
+    [Parameter]
+    public int PageTotal { get; set; } = 1;
+
+    [Parameter]
+    public int Page { get; set; } = 1;
+
+    public bool LastPageDisabled
+    {
+        get { return Page == 1; }
+    }
+
+    public bool ButtonProximoDisabled
+    {
+        get { return Page == LastPage; }
+    }
+
+
+    public string IsCurrentPageClass(int page)
+    {
+
+        return Page == page ? "is-current" : string.Empty;
+    }
+
+    public int FirstPage
+    {
+        get
+        {
+            return Pages.FirstOrDefault();
+        }
+    }
+
+    public int LastPage
+    {
+        get
+        {
+            return Pages.LastOrDefault();
+        }
+    }
+    public List<int> PagesMid
+    {
+        get
+        {
+
+            if (Pages.Count < 5)
+            {
+                return new List<int>();
+            }
+            else
+            {
+                List<int> paginasMeio = new List<int>();
+
+                int paginaDoMeio = Page;
+
+                int paginaAntesDoMeio = paginaDoMeio - 1;
+
+                int paginaDepoisDoMeio = paginaDoMeio + 1;
+
+                if (paginaAntesDoMeio > 1)
+                    paginasMeio.Add(paginaAntesDoMeio);
+
+                if (paginaDoMeio != FirstPage && paginaDoMeio != LastPage)
+                    paginasMeio.Add(paginaDoMeio);
+
+                if (paginaDepoisDoMeio != LastPage && paginaDepoisDoMeio < LastPage)
+                    paginasMeio.Add(paginaDepoisDoMeio);
+
+                if (paginasMeio.Count <= 2 && Pages.Count >= 5)
+                {
+                    int proximaPagina = paginasMeio.Last() + 1;
+                    int paginaAnterior = paginasMeio.First() - 1;
+
+                    if (proximaPagina != LastPage)
+                    {
+                        paginasMeio.Add(proximaPagina);
+
+                        if (paginasMeio.Count < 3)
+                        {
+                            paginasMeio.Add(proximaPagina + 1);
+                        }
+                    }
+                }
+
+                return paginasMeio;
+            }
+        }
+    }
+
+    public List<int> Pages
+    {
+        get
+        {
+            List<int> paginas = new List<int>();
+
+            for (int i = 1; i <= PageTotal; i++)
+                paginas.Add(i);
+
+            return paginas;
+
+        }
+    }
+
+    public List<int> PagesCalc
+    {
+        get
+        {
+            if (!PagesMid.Any()) return Pages;
+
+            List<int> pages = new List<int>();
+            pages.Add(FirstPage);
+            pages.AddRange(PagesMid);
+            pages.Add(LastPage);
+            return pages;
+        }
+    }
+
+    public void LastPageOnClick()
+    {
+        if (LastPageDisabled) return;
+        PageOnChange.InvokeAsync(Page - 1);
+    }
+
+    public void NextPageOnClick()
+    {
+        if (ButtonProximoDisabled) return;
+        PageOnChange.InvokeAsync(Page + 1);
+    }
+
+    public void PageOnClick(int pagina)
+    {
+        PageOnChange.InvokeAsync(pagina);
+    }
+
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+}
