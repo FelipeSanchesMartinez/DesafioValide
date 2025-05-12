@@ -3,7 +3,7 @@
 Este projeto é uma aplicação web ASP.NET MVC com um CRUD completo de Produtos e Categorias, desenvolvida como parte de um teste técnico. O sistema permite o gerenciamento de produtos e categorias com funcionalidades dinâmicas e interface responsiva.
 📌 Tecnologias Utilizadas
 
-    .NET 8 (ASP.NET MVC)
+    .NET 8 
 
     C# com Entity Framework Core
 
@@ -22,7 +22,7 @@ Este projeto é uma aplicação web ASP.NET MVC com um CRUD completo de Produtos
 
     Listagem de categorias
 
-    Criação e edição em modal Bootstrap
+    Criação e edição em modal 
 
     Exclusão com confirmação
 
@@ -48,7 +48,7 @@ Este projeto é uma aplicação web ASP.NET MVC com um CRUD completo de Produtos
 
     Infrastructure: Configuração de banco de dados e repositórios
 
-    Web: Projeto principal ASP.NET MVC com views, controllers e Blazor para interações dinâmicas
+    Web: Projeto principal BLazor  
 
 🗃️ Banco de Dados
 
