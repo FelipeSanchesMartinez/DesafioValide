@@ -1,6 +1,6 @@
 🛒 Teste Técnico - Desenvolvedor .NET Fullstack
 
-Este projeto é uma aplicação web ASP.NET MVC com um CRUD completo de Produtos e Categorias, desenvolvida como parte de um teste técnico. O sistema permite o gerenciamento de produtos e categorias com funcionalidades dinâmicas e interface responsiva.
+Este projeto é uma aplicação web Blazot com um CRUD completo de Produtos e Categorias, desenvolvida como parte de um teste técnico. O sistema permite o gerenciamento de produtos e categorias com funcionalidades dinâmicas e interface responsiva.
 📌 Tecnologias Utilizadas
 
     .NET 8 
